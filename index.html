@@ -3,530 +3,183 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>4K Invoice Scanner</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<title>Smart Invoice Scanner</title>
+
+<!-- Icons -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<!-- PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 <style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins,Arial}
+body{
+  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+  color:#fff;min-height:100vh;padding:20px
+}
+.container{max-width:420px;margin:auto}
+h1{text-align:center;margin-bottom:10px}
+.status{text-align:center;font-size:.9em;opacity:.8;margin-bottom:10px}
+
+.scanner{
+  position:relative;
+  width:100%;
+  height:420px;
+  background:#000;
+  border-radius:20px;
+  overflow:hidden;
+  box-shadow:0 0 30px rgba(0,255,200,.4)
 }
 
-body {
-    background: #111;
-    color: white;
-    padding: 20px;
-    min-height: 100vh;
+video,canvas{width:100%;height:100%;object-fit:cover}
+
+.scan-line{
+  position:absolute;
+  width:100%;
+  height:3px;
+  background:lime;
+  animation:scan 2s linear infinite;
+}
+@keyframes scan{
+  0%{top:0}50%{top:100%}100%{top:0}
 }
 
-.container {
-    max-width: 800px;
-    margin: 0 auto;
+.controls, .actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
 }
 
-.header {
-    text-align: center;
-    margin-bottom: 20px;
-    padding: 20px;
-    background: linear-gradient(135deg, #0066ff, #00ccff);
-    border-radius: 15px;
+button{
+  flex:1;
+  padding:12px;
+  border:none;
+  border-radius:30px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.primary{background:#00ffcc;color:#000}
+.secondary{background:#444;color:#fff}
+.success{background:#25d366;color:#000}
+
+input{
+  width:100%;
+  padding:10px;
+  margin-top:8px;
+  border-radius:10px;
+  border:none;
 }
 
-.header h1 {
-    font-size: 24px;
-    margin-bottom: 5px;
+.storage{
+  margin-top:15px;
+  background:rgba(0,0,0,.3);
+  padding:10px;
+  border-radius:10px;
+  max-height:150px;
+  overflow:auto;
 }
 
-.header p {
-    font-size: 14px;
-    opacity: 0.9;
-}
-
-.scanner {
-    background: black;
-    border-radius: 15px;
-    overflow: hidden;
-    margin-bottom: 20px;
-    position: relative;
-    height: 400px;
-}
-
-#video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.scan-line {
-    position: absolute;
-    width: 100%;
-    height: 3px;
-    background: lime;
-    box-shadow: 0 0 10px lime;
-    animation: scan 2s infinite;
-}
-
-@keyframes scan {
-    0% { top: 0; }
-    100% { top: 100%; }
-}
-
-.controls {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.btn {
-    padding: 15px;
-    border: none;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-
-.btn-primary {
-    background: #0066ff;
-    color: white;
-}
-
-.btn-success {
-    background: #00cc44;
-    color: white;
-}
-
-.btn-danger {
-    background: #ff4444;
-    color: white;
-}
-
-.btn:disabled {
-    background: #666;
-    cursor: not-allowed;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-input {
-    width: 100%;
-    padding: 12px;
-    border-radius: 8px;
-    border: 2px solid #333;
-    background: #222;
-    color: white;
-    font-size: 16px;
-}
-
-.storage {
-    background: #222;
-    border-radius: 10px;
-    padding: 15px;
-    margin-top: 20px;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.invoice-item {
-    padding: 10px;
-    border-bottom: 1px solid #444;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.invoice-item:last-child {
-    border-bottom: none;
-}
-
-.invoice-actions {
-    display: flex;
-    gap: 5px;
-}
-
-.action-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: none;
-    background: #333;
-    color: white;
-    cursor: pointer;
-}
-
-.status {
-    text-align: center;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 8px;
-    background: #222;
-}
-
-#canvas {
-    display: none;
-}
-
-.alert {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: #00cc44;
-    color: white;
-    padding: 15px;
-    border-radius: 8px;
-    display: none;
-    z-index: 1000;
-    max-width: 300px;
+.invoice{
+  font-size:.85em;
+  border-bottom:1px solid rgba(255,255,255,.2);
+  padding:5px 0;
 }
 </style>
 </head>
+
 <body>
 <div class="container">
-    <div class="header">
-        <h1><i class="fas fa-file-invoice"></i> 4K Invoice Scanner</h1>
-        <p>Scan invoices in high quality & save as PDF</p>
-    </div>
 
-    <div class="status" id="status">Camera is off</div>
+<h1>📄 Smart Invoice Scanner</h1>
+<div class="status" id="status">Camera off</div>
 
-    <div class="scanner">
-        <video id="video" autoplay playsinline></video>
-        <div class="scan-line" id="scanLine" style="display:none"></div>
-        <canvas id="canvas"></canvas>
-    </div>
-
-    <div class="controls">
-        <button class="btn btn-primary" onclick="startCamera()" id="startBtn">
-            <i class="fas fa-camera"></i> Start Camera
-        </button>
-        <button class="btn btn-success" onclick="capture()" id="captureBtn" disabled>
-            <i class="fas fa-camera-retro"></i> Capture
-        </button>
-        <button class="btn btn-primary" onclick="savePDF()" id="saveBtn" disabled>
-            <i class="fas fa-file-pdf"></i> Save PDF
-        </button>
-        <button class="btn btn-danger" onclick="resetAll()">
-            <i class="fas fa-redo"></i> Reset
-        </button>
-    </div>
-
-    <div class="form-group">
-        <input type="text" id="invoiceNumber" placeholder="Invoice Number (e.g., INV-2024-001)">
-    </div>
-
-    <div class="form-group">
-        <input type="text" id="supplier" placeholder="Supplier Name">
-    </div>
-
-    <div class="form-group">
-        <input type="text" id="amount" placeholder="Amount (e.g., $100.00)">
-    </div>
-
-    <div class="storage" id="storage">
-        <h3>Scanned Invoices</h3>
-        <div id="invoiceList"></div>
-    </div>
+<div class="scanner">
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" hidden></canvas>
+  <div class="scan-line" id="scanLine" style="display:none"></div>
 </div>
 
-<div class="alert" id="alert"></div>
+<div class="controls">
+  <button class="primary" onclick="startCamera()"><i class="fa fa-camera"></i> Open Camera</button>
+  <button class="secondary" onclick="capture()"><i class="fa fa-circle"></i> Capture</button>
+</div>
+
+<input id="lpo" placeholder="LPO / Invoice Number">
+<input id="supplier" placeholder="Supplier Name">
+
+<div class="actions">
+  <button class="primary" onclick="savePDF()">⬇ PDF</button>
+  <button class="success" onclick="share()">📤 WhatsApp</button>
+</div>
+
+<div class="storage" id="storage">
+  <b>Stored Invoices</b>
+</div>
+
+</div>
 
 <script>
-// Simple variables
-let cameraActive = false;
-let capturedImage = null;
-let invoices = [];
+let stream;
+let imageData;
 
-// DOM Elements
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const status = document.getElementById('status');
 const scanLine = document.getElementById('scanLine');
-const startBtn = document.getElementById('startBtn');
-const captureBtn = document.getElementById('captureBtn');
-const saveBtn = document.getElementById('saveBtn');
-const invoiceList = document.getElementById('invoiceList');
-const alert = document.getElementById('alert');
+const storage = document.getElementById('storage');
 
-// Load saved invoices
-loadInvoices();
-
-// Start Camera
-async function startCamera() {
-    try {
-        // Try to get 4K camera, fallback to HD if not available
-        const constraints = {
-            video: {
-                width: { ideal: 1920 },
-                height: { ideal: 1080 },
-                facingMode: 'environment'
-            }
-        };
-
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        video.srcObject = stream;
-        cameraActive = true;
-        
-        // Update UI
-        startBtn.disabled = true;
-        startBtn.innerHTML = '<i class="fas fa-check-circle"></i> Camera On';
-        captureBtn.disabled = false;
-        scanLine.style.display = 'block';
-        status.textContent = 'Camera active - Position invoice';
-        status.style.color = '#00ff00';
-        
-        showAlert('Camera started successfully!', 'success');
-        
-    } catch (error) {
-        console.log('Camera error:', error);
-        showAlert('Cannot access camera. Please allow camera permissions.', 'error');
-        status.textContent = 'Camera access denied';
-        status.style.color = '#ff4444';
-    }
+function startCamera(){
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
+  .then(s=>{
+    stream=s;
+    video.srcObject=s;
+    scanLine.style.display="block";
+    status.innerText="Camera active – align invoice";
+  })
 }
 
-// Capture Invoice
-function capture() {
-    if (!cameraActive) {
-        showAlert('Please start camera first', 'error');
-        return;
-    }
-
-    // Set canvas size to video size
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    // Draw video frame to canvas
-    ctx.drawImage(video, 0, 0);
-    
-    // Get image data
-    capturedImage = canvas.toDataURL('image/jpeg', 0.9);
-    
-    // Update UI
-    captureBtn.disabled = true;
-    captureBtn.innerHTML = '<i class="fas fa-check"></i> Captured';
-    saveBtn.disabled = false;
-    scanLine.style.display = 'none';
-    status.textContent = 'Invoice captured - Ready to save';
-    
-    // Auto-generate invoice number if empty
-    const invoiceNum = document.getElementById('invoiceNumber');
-    if (!invoiceNum.value) {
-        invoiceNum.value = 'INV-' + new Date().getFullYear() + '-' + 
-            (invoices.length + 1).toString().padStart(3, '0');
-    }
-    
-    showAlert('Invoice captured successfully!', 'success');
-    
-    // Restart scan line after 2 seconds
-    setTimeout(() => {
-        if (cameraActive) {
-            scanLine.style.display = 'block';
-        }
-    }, 2000);
+function capture(){
+  canvas.width=video.videoWidth;
+  canvas.height=video.videoHeight;
+  ctx.drawImage(video,0,0);
+  imageData=canvas.toDataURL("image/jpeg");
+  scanLine.style.display="none";
+  status.innerText="Invoice captured ✔";
 }
 
-// Save as PDF
-function savePDF() {
-    if (!capturedImage) {
-        showAlert('Please capture an invoice first', 'error');
-        return;
-    }
-
-    // Get form data
-    const invoiceNumber = document.getElementById('invoiceNumber').value || 'Invoice';
-    const supplier = document.getElementById('supplier').value || 'Unknown Supplier';
-    const amount = document.getElementById('amount').value || '0.00';
-    
-    // Create PDF
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    
-    // Add text
-    pdf.setFontSize(16);
-    pdf.text('INVOICE DOCUMENT', 105, 20, { align: 'center' });
-    
-    pdf.setFontSize(12);
-    pdf.text(`Invoice: ${invoiceNumber}`, 20, 40);
-    pdf.text(`Supplier: ${supplier}`, 20, 50);
-    pdf.text(`Amount: $${amount}`, 20, 60);
-    pdf.text(`Date: ${new Date().toLocaleDateString()}`, 20, 70);
-    
-    // Add image
-    const imgWidth = 170;
-    const imgHeight = (imgWidth * canvas.height) / canvas.width;
-    pdf.addImage(capturedImage, 'JPEG', 20, 90, imgWidth, imgHeight);
-    
-    // Save PDF
-    const fileName = `${invoiceNumber.replace(/\s+/g, '_')}.pdf`;
-    pdf.save(fileName);
-    
-    // Save to storage
-    saveInvoice(invoiceNumber, supplier, amount, fileName);
-    
-    // Reset buttons
-    captureBtn.disabled = false;
-    captureBtn.innerHTML = '<i class="fas fa-camera-retro"></i> Capture';
-    saveBtn.disabled = true;
-    
-    showAlert(`PDF saved as ${fileName}`, 'success');
+function savePDF(){
+  if(!imageData)return alert("Capture invoice first");
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF("p","mm","a4");
+  pdf.addImage(imageData,"JPEG",0,0,210,297);
+  const lpo=document.getElementById("lpo").value||"Invoice";
+  pdf.save(lpo+".pdf");
+  saveLocal(lpo);
 }
 
-// Save invoice to storage
-function saveInvoice(number, supplier, amount, fileName) {
-    const invoice = {
-        id: Date.now(),
-        number: number,
-        supplier: supplier,
-        amount: amount,
-        date: new Date().toLocaleString(),
-        file: fileName
-    };
-    
-    invoices.unshift(invoice); // Add to beginning
-    localStorage.setItem('invoices', JSON.stringify(invoices));
-    renderInvoices();
+function saveLocal(lpo){
+  const supplier=document.getElementById("supplier").value||"Unknown";
+  const item={lpo,supplier,date:new Date().toLocaleString()};
+  const list=JSON.parse(localStorage.getItem("invoices")||"[]");
+  list.push(item);
+  localStorage.setItem("invoices",JSON.stringify(list));
+  render();
 }
 
-// Load invoices from storage
-function loadInvoices() {
-    const saved = localStorage.getItem('invoices');
-    if (saved) {
-        invoices = JSON.parse(saved);
-        renderInvoices();
-    }
+function render(){
+  const list=JSON.parse(localStorage.getItem("invoices")||"[]");
+  storage.innerHTML="<b>Stored Invoices</b>";
+  list.forEach(i=>{
+    storage.innerHTML+=`<div class="invoice">📄 ${i.lpo} – ${i.supplier}<br><small>${i.date}</small></div>`;
+  });
 }
+render();
 
-// Render invoices list
-function renderInvoices() {
-    invoiceList.innerHTML = '';
-    
-    if (invoices.length === 0) {
-        invoiceList.innerHTML = '<p style="text-align: center; opacity: 0.7;">No invoices saved yet</p>';
-        return;
-    }
-    
-    invoices.forEach(invoice => {
-        const div = document.createElement('div');
-        div.className = 'invoice-item';
-        div.innerHTML = `
-            <div>
-                <strong>${invoice.number}</strong><br>
-                <small>${invoice.supplier} • $${invoice.amount}</small><br>
-                <small style="opacity: 0.7;">${invoice.date}</small>
-            </div>
-            <div class="invoice-actions">
-                <button class="action-btn" onclick="downloadInvoice('${invoice.id}')" title="Download">
-                    <i class="fas fa-download"></i>
-                </button>
-                <button class="action-btn" onclick="shareInvoice('${invoice.id}')" title="Share">
-                    <i class="fas fa-share"></i>
-                </button>
-                <button class="action-btn" onclick="deleteInvoice('${invoice.id}')" title="Delete">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-        `;
-        invoiceList.appendChild(div);
-    });
+function share(){
+  window.open("https://wa.me/?text="+encodeURIComponent("Invoice scanned and ready"));
 }
-
-// Download invoice
-function downloadInvoice(id) {
-    const invoice = invoices.find(i => i.id == id);
-    if (!invoice) return;
-    
-    // Create a simple PDF for download
-    const pdf = new jsPDF();
-    pdf.text(`Invoice: ${invoice.number}`, 20, 20);
-    pdf.text(`Supplier: ${invoice.supplier}`, 20, 30);
-    pdf.text(`Amount: $${invoice.amount}`, 20, 40);
-    pdf.text(`Date: ${invoice.date}`, 20, 50);
-    pdf.save(`invoice_${invoice.number}.pdf`);
-    
-    showAlert(`Invoice ${invoice.number} downloaded`, 'success');
-}
-
-// Share invoice
-function shareInvoice(id) {
-    const invoice = invoices.find(i => i.id == id);
-    if (!invoice) return;
-    
-    const text = `Invoice Details:\nNumber: ${invoice.number}\nSupplier: ${invoice.supplier}\nAmount: $${invoice.amount}\nDate: ${invoice.date}`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-}
-
-// Delete invoice
-function deleteInvoice(id) {
-    if (!confirm('Delete this invoice?')) return;
-    
-    invoices = invoices.filter(i => i.id != id);
-    localStorage.setItem('invoices', JSON.stringify(invoices));
-    renderInvoices();
-    showAlert('Invoice deleted', 'success');
-}
-
-// Reset everything
-function resetAll() {
-    // Stop camera
-    if (video.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-    }
-    
-    // Reset variables
-    cameraActive = false;
-    capturedImage = null;
-    
-    // Reset UI
-    startBtn.disabled = false;
-    startBtn.innerHTML = '<i class="fas fa-camera"></i> Start Camera';
-    captureBtn.disabled = true;
-    captureBtn.innerHTML = '<i class="fas fa-camera-retro"></i> Capture';
-    saveBtn.disabled = true;
-    scanLine.style.display = 'none';
-    status.textContent = 'Camera is off';
-    status.style.color = 'white';
-    
-    // Clear form
-    document.getElementById('invoiceNumber').value = '';
-    document.getElementById('supplier').value = '';
-    document.getElementById('amount').value = '';
-    
-    showAlert('Scanner reset successfully', 'success');
-}
-
-// Show alert message
-function showAlert(message, type) {
-    alert.textContent = message;
-    alert.style.background = type === 'success' ? '#00cc44' : '#ff4444';
-    alert.style.display = 'block';
-    
-    setTimeout(() => {
-        alert.style.display = 'none';
-    }, 3000);
-}
-
-// Share via WhatsApp
-function shareToWhatsApp() {
-    const invoiceNum = document.getElementById('invoiceNumber').value || 'Invoice';
-    const supplier = document.getElementById('supplier').value || 'Supplier';
-    const text = `Invoice ${invoiceNum} from ${supplier} scanned successfully!`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-}
-
-// Initialize on page load
-window.onload = function() {
-    // Auto-start camera (optional)
-    // startCamera();
-};
 </script>
+
 </body>
 </html>
