@@ -3,183 +3,447 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Invoice Scanner</title>
-
-<!-- Icons -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-
-<!-- PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
+<title>Invoice Scanner</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins,Arial}
-body{
-  background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-  color:#fff;min-height:100vh;padding:20px
-}
-.container{max-width:420px;margin:auto}
-h1{text-align:center;margin-bottom:10px}
-.status{text-align:center;font-size:.9em;opacity:.8;margin-bottom:10px}
-
-.scanner{
-  position:relative;
-  width:100%;
-  height:420px;
-  background:#000;
-  border-radius:20px;
-  overflow:hidden;
-  box-shadow:0 0 30px rgba(0,255,200,.4)
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
 }
 
-video,canvas{width:100%;height:100%;object-fit:cover}
-
-.scan-line{
-  position:absolute;
-  width:100%;
-  height:3px;
-  background:lime;
-  animation:scan 2s linear infinite;
-}
-@keyframes scan{
-  0%{top:0}50%{top:100%}100%{top:0}
+body {
+    background: #1a1a2e;
+    color: white;
+    padding: 15px;
+    min-height: 100vh;
 }
 
-.controls, .actions{
-  display:flex;
-  gap:10px;
-  margin-top:12px;
+.container {
+    max-width: 100%;
 }
 
-button{
-  flex:1;
-  padding:12px;
-  border:none;
-  border-radius:30px;
-  font-weight:bold;
-  cursor:pointer;
-}
-.primary{background:#00ffcc;color:#000}
-.secondary{background:#444;color:#fff}
-.success{background:#25d366;color:#000}
-
-input{
-  width:100%;
-  padding:10px;
-  margin-top:8px;
-  border-radius:10px;
-  border:none;
+h1 {
+    text-align: center;
+    margin: 10px 0;
+    color: #00ffcc;
+    font-size: 1.5rem;
 }
 
-.storage{
-  margin-top:15px;
-  background:rgba(0,0,0,.3);
-  padding:10px;
-  border-radius:10px;
-  max-height:150px;
-  overflow:auto;
+.status {
+    text-align: center;
+    margin: 10px 0;
+    padding: 10px;
+    background: #2a2a3e;
+    border-radius: 8px;
+    font-size: 0.9rem;
 }
 
-.invoice{
-  font-size:.85em;
-  border-bottom:1px solid rgba(255,255,255,.2);
-  padding:5px 0;
+.scanner {
+    width: 100%;
+    height: 300px;
+    background: black;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 15px 0;
+    position: relative;
+    border: 2px solid #334155;
+}
+
+video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+
+.scan-line {
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background: lime;
+    box-shadow: 0 0 10px lime;
+    display: none;
+    animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+    0% { top: 0; }
+    100% { top: 100%; }
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+button {
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-start {
+    background: #0066ff;
+    color: white;
+}
+
+.btn-capture {
+    background: #00cc44;
+    color: white;
+}
+
+.btn-pdf {
+    background: #ff6600;
+    color: white;
+}
+
+.btn-reset {
+    background: #ff4444;
+    color: white;
+}
+
+button:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 2px solid #334155;
+    background: #2a2a3e;
+    color: white;
+    font-size: 1rem;
+}
+
+.storage {
+    background: #2a2a3e;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.invoice {
+    padding: 10px;
+    border-bottom: 1px solid #444;
+    font-size: 0.9rem;
+}
+
+.actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #00cc44;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    display: none;
+    z-index: 1000;
+    max-width: 300px;
 }
 </style>
 </head>
-
 <body>
 <div class="container">
-
-<h1>📄 Smart Invoice Scanner</h1>
-<div class="status" id="status">Camera off</div>
-
-<div class="scanner">
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas" hidden></canvas>
-  <div class="scan-line" id="scanLine" style="display:none"></div>
+    <h1>📄 Invoice Scanner</h1>
+    <div class="status" id="status">Ready to start</div>
+    
+    <div class="scanner">
+        <video id="video" autoplay playsinline></video>
+        <div class="scan-line" id="scanLine"></div>
+    </div>
+    
+    <div class="controls">
+        <button class="btn-start" onclick="startCamera()" id="startBtn">
+            📷 Start
+        </button>
+        <button class="btn-capture" onclick="capture()" id="captureBtn" disabled>
+            ⚪ Capture
+        </button>
+        <button class="btn-pdf" onclick="savePDF()" id="saveBtn" disabled>
+            📄 PDF
+        </button>
+        <button class="btn-reset" onclick="resetAll()">
+            🔄 Reset
+        </button>
+    </div>
+    
+    <input type="text" id="invoiceNum" placeholder="Invoice Number">
+    <input type="text" id="supplier" placeholder="Supplier Name">
+    
+    <div class="actions">
+        <button style="background:#25d366;" onclick="share()">📱 WhatsApp</button>
+        <button style="background:#6666ff;" onclick="showStorage()">💾 Storage</button>
+    </div>
+    
+    <div class="storage" id="storage" style="display:none">
+        <h3>Stored Invoices</h3>
+        <div id="invoiceList"></div>
+    </div>
 </div>
 
-<div class="controls">
-  <button class="primary" onclick="startCamera()"><i class="fa fa-camera"></i> Open Camera</button>
-  <button class="secondary" onclick="capture()"><i class="fa fa-circle"></i> Capture</button>
-</div>
-
-<input id="lpo" placeholder="LPO / Invoice Number">
-<input id="supplier" placeholder="Supplier Name">
-
-<div class="actions">
-  <button class="primary" onclick="savePDF()">⬇ PDF</button>
-  <button class="success" onclick="share()">📤 WhatsApp</button>
-</div>
-
-<div class="storage" id="storage">
-  <b>Stored Invoices</b>
-</div>
-
-</div>
+<div class="alert" id="alert"></div>
 
 <script>
-let stream;
-let imageData;
+// Simple variables
+let cameraOn = false;
+let currentImage = null;
 
+// DOM Elements
 const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
 const status = document.getElementById('status');
 const scanLine = document.getElementById('scanLine');
+const startBtn = document.getElementById('startBtn');
+const captureBtn = document.getElementById('captureBtn');
+const saveBtn = document.getElementById('saveBtn');
 const storage = document.getElementById('storage');
+const invoiceList = document.getElementById('invoiceList');
+const alertBox = document.getElementById('alert');
 
-function startCamera(){
-  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}})
-  .then(s=>{
-    stream=s;
-    video.srcObject=s;
-    scanLine.style.display="block";
-    status.innerText="Camera active – align invoice";
-  })
+// Load saved invoices
+loadInvoices();
+
+// Show alert
+function showAlert(msg, type = 'success') {
+    alertBox.textContent = msg;
+    alertBox.style.background = type === 'error' ? '#ff4444' : '#00cc44';
+    alertBox.style.display = 'block';
+    setTimeout(() => alertBox.style.display = 'none', 3000);
 }
 
-function capture(){
-  canvas.width=video.videoWidth;
-  canvas.height=video.videoHeight;
-  ctx.drawImage(video,0,0);
-  imageData=canvas.toDataURL("image/jpeg");
-  scanLine.style.display="none";
-  status.innerText="Invoice captured ✔";
+// Start Camera
+async function startCamera() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+        });
+        
+        video.srcObject = stream;
+        cameraOn = true;
+        
+        // Update UI
+        startBtn.disabled = true;
+        startBtn.textContent = '✅ Active';
+        captureBtn.disabled = false;
+        scanLine.style.display = 'block';
+        status.textContent = 'Camera active - Position invoice';
+        
+        showAlert('Camera started');
+        
+    } catch (error) {
+        showAlert('Camera access denied', 'error');
+        status.textContent = 'Camera error';
+    }
 }
 
-function savePDF(){
-  if(!imageData)return alert("Capture invoice first");
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF("p","mm","a4");
-  pdf.addImage(imageData,"JPEG",0,0,210,297);
-  const lpo=document.getElementById("lpo").value||"Invoice";
-  pdf.save(lpo+".pdf");
-  saveLocal(lpo);
+// Capture
+function capture() {
+    if (!cameraOn) {
+        showAlert('Start camera first', 'error');
+        return;
+    }
+    
+    // Create canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    
+    // Draw video to canvas
+    ctx.drawImage(video, 0, 0);
+    
+    // Get image
+    currentImage = canvas.toDataURL('image/jpeg');
+    
+    // Stop scan line
+    scanLine.style.display = 'none';
+    
+    // Update UI
+    captureBtn.disabled = true;
+    captureBtn.textContent = '✅ Captured';
+    saveBtn.disabled = false;
+    status.textContent = 'Invoice captured - Ready to save';
+    
+    // Auto-fill invoice number
+    const invNum = document.getElementById('invoiceNum');
+    if (!invNum.value) {
+        invNum.value = 'INV-' + new Date().getFullYear() + 
+            (Math.floor(Math.random() * 900) + 100);
+    }
+    
+    showAlert('Invoice captured');
+    
+    // Restart scan line after 2 seconds
+    setTimeout(() => {
+        if (cameraOn) {
+            scanLine.style.display = 'block';
+        }
+    }, 2000);
 }
 
-function saveLocal(lpo){
-  const supplier=document.getElementById("supplier").value||"Unknown";
-  const item={lpo,supplier,date:new Date().toLocaleString()};
-  const list=JSON.parse(localStorage.getItem("invoices")||"[]");
-  list.push(item);
-  localStorage.setItem("invoices",JSON.stringify(list));
-  render();
+// Save PDF
+function savePDF() {
+    if (!currentImage) {
+        showAlert('Capture invoice first', 'error');
+        return;
+    }
+    
+    // Get values
+    const invNum = document.getElementById('invoiceNum').value || 'Invoice';
+    const supplier = document.getElementById('supplier').value || 'Unknown';
+    
+    // Create simple PDF
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    
+    // Add text
+    pdf.text('INVOICE', 20, 20);
+    pdf.text(`Number: ${invNum}`, 20, 30);
+    pdf.text(`Supplier: ${supplier}`, 20, 40);
+    pdf.text(`Date: ${new Date().toLocaleDateString()}`, 20, 50);
+    
+    // Create canvas for image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        // Add image to PDF
+        const imgWidth = 170;
+        const imgHeight = (imgWidth * canvas.height) / canvas.width;
+        pdf.addImage(canvas.toDataURL('image/jpeg'), 'JPEG', 20, 60, imgWidth, imgHeight);
+        
+        // Save PDF
+        pdf.save(`${invNum}.pdf`);
+        
+        // Save to storage
+        saveInvoice(invNum, supplier);
+        
+        // Reset buttons
+        captureBtn.disabled = false;
+        captureBtn.textContent = '⚪ Capture';
+        saveBtn.disabled = true;
+        
+        showAlert('PDF saved successfully');
+    };
+    
+    img.src = currentImage;
 }
 
-function render(){
-  const list=JSON.parse(localStorage.getItem("invoices")||"[]");
-  storage.innerHTML="<b>Stored Invoices</b>";
-  list.forEach(i=>{
-    storage.innerHTML+=`<div class="invoice">📄 ${i.lpo} – ${i.supplier}<br><small>${i.date}</small></div>`;
-  });
+// Save invoice
+function saveInvoice(number, supplier) {
+    const invoice = {
+        id: Date.now(),
+        number: number,
+        supplier: supplier,
+        date: new Date().toLocaleString()
+    };
+    
+    const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+    invoices.unshift(invoice);
+    localStorage.setItem('invoices', JSON.stringify(invoices));
+    
+    loadInvoices();
 }
-render();
 
-function share(){
-  window.open("https://wa.me/?text="+encodeURIComponent("Invoice scanned and ready"));
+// Load invoices
+function loadInvoices() {
+    const invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+    invoiceList.innerHTML = '';
+    
+    if (invoices.length === 0) {
+        invoiceList.innerHTML = '<p style="text-align:center;opacity:0.7">No invoices saved</p>';
+        return;
+    }
+    
+    invoices.forEach(inv => {
+        const div = document.createElement('div');
+        div.className = 'invoice';
+        div.innerHTML = `
+            <strong>${inv.number}</strong><br>
+            <small>${inv.supplier} • ${inv.date}</small>
+            <button onclick="deleteInvoice('${inv.id}')" style="float:right;background:none;border:none;color:#ff4444;cursor:pointer">🗑️</button>
+        `;
+        invoiceList.appendChild(div);
+    });
+}
+
+// Delete invoice
+function deleteInvoice(id) {
+    let invoices = JSON.parse(localStorage.getItem('invoices') || '[]');
+    invoices = invoices.filter(inv => inv.id != id);
+    localStorage.setItem('invoices', JSON.stringify(invoices));
+    loadInvoices();
+    showAlert('Invoice deleted');
+}
+
+// Show storage
+function showStorage() {
+    storage.style.display = storage.style.display === 'none' ? 'block' : 'none';
+    loadInvoices();
+}
+
+// Reset all
+function resetAll() {
+    // Stop camera
+    if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+    }
+    
+    // Reset variables
+    cameraOn = false;
+    currentImage = null;
+    
+    // Reset UI
+    video.srcObject = null;
+    startBtn.disabled = false;
+    startBtn.textContent = '📷 Start';
+    captureBtn.disabled = true;
+    captureBtn.textContent = '⚪ Capture';
+    saveBtn.disabled = true;
+    scanLine.style.display = 'none';
+    status.textContent = 'Ready to start';
+    
+    // Clear inputs
+    document.getElementById('invoiceNum').value = '';
+    document.getElementById('supplier').value = '';
+    
+    showAlert('Scanner reset');
+}
+
+// Share via WhatsApp
+function share() {
+    const invNum = document.getElementById('invoiceNum').value || 'Invoice';
+    const supplier = document.getElementById('supplier').value || 'Supplier';
+    const text = `Invoice ${invNum} from ${supplier}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
 }
 </script>
-
 </body>
 </html>
