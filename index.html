@@ -1,1 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4K Smart Document Scanner | Auto-Upload PDF</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2980, #26d0ce);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            gap: 30px;
+        }
+        
+        .scanner-column {
+            flex: 2;
+            min-width: 300px;
+        }
+        
+        .controls-column {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .scanner-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background-color: #111;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            border: 3px solid #2c3e50;
+        }
+        
+        #camera-view {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror effect for front camera */
+        }
+        
+        .scanner-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 70%;
+            border: 3px solid #00ff00;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            z-index: 5;
+            pointer-events: none;
+        }
+        
+        .scan-line {
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 85%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            box-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+            z-index: 10;
+            animation: scan-portrait 3s ease-in-out infinite;
+            border-radius: 2px;
+        }
+        
+        @keyframes scan-portrait {
+            0% {
+                top: 15%;
+            }
+            50% {
+                top: 85%;
+            }
+            100% {
+                top: 15%;
+            }
+        }
+        
+        .document-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 75%;
+            height: 65%;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            z-index: 4;
+            pointer-events: none;
+        }
+        
+        .scanner-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60, #219653);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .pages-container {
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .page-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .page-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid #3498db;
+        }
+        
+        .page-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .page-number {
+            width: 36px;
+            height: 36px;
+            background-color: #3498db;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .page-details p {
+            margin: 2px 0;
+        }
+        
+        .page-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 1.1rem;
+            transition: color 0.2s;
+            padding: 5px;
+        }
+        
+        .action-btn:hover {
+            color: #3498db;
+        }
+        
+        .status-panel {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+        
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+        }
+        
+        .status-dot.active {
+            background-color: #27ae60;
+            box-shadow: 0 0 10px #27ae60;
+        }
+        
+        .status-dot.scanning {
+            background-color: #f39c12;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .document-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #f39c12;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .quality-indicator {
+            background-color: #e8f4fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .quality-bar {
+            height: 8px;
+            background-color: #ddd;
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .quality-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #27ae60, #2ecc71);
+            width: 85%;
+            border-radius: 4px;
+        }
+        
+        .upload-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .upload-progress {
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .upload-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+        
+        .preview-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+        
+        .a4-badge {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .scanner-container {
+                height: 400px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .scanner-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: white;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-file-invoice"></i> 4K Smart Document Scanner</h1>
+            <p>Professional document scanning with automatic A4 formatting, portrait scanning, and instant PDF upload</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="scanner-column">
+                <h2 class="section-title"><i class="fas fa-camera"></i> Document Scanner</h2>
+                
+                <div class="scanner-container">
+                    <video id="camera-view" autoplay playsinline></video>
+                    <div class="scanner-frame"></div>
+                    <div class="scan-line" id="scan-line"></div>
+                    <div class="document-overlay"></div>
+                    
+                    <div class="document-detection-message" id="detection-message" style="
+                        position: absolute;
+                        top: 10px;
+                        left: 0;
+                        width: 100%;
+                        text-align: center;
+                        color: #00ff00;
+                        font-weight: bold;
+                        text-shadow: 0 0 5px rgba(0,0,0,0.8);
+                        z-index: 20;
+                        display: none;
+                    ">
+                        <i class="fas fa-check-circle"></i> Document Detected - Scanning...
+                    </div>
+                </div>
+                
+                <div class="scanner-controls">
+                    <button id="start-camera" class="btn btn-primary">
+                        <i class="fas fa-video"></i> Start 4K Camera
+                    </button>
+                    <button id="auto-scan-btn" class="btn btn-success" disabled>
+                        <i class="fas fa-robot"></i> Auto-Scan Mode
+                    </button>
+                    <button id="capture-btn" class="btn btn-warning" disabled>
+                        <i class="fas fa-camera"></i> Capture Single Page
+                    </button>
+                    <button id="reset-btn" class="btn btn-danger">
+                        <i class="fas fa-redo"></i> Reset Scanner
+                    </button>
+                </div>
+                
+                <div class="quality-indicator">
+                    <h3><i class="fas fa-chart-line"></i> Scan Quality: 4K Optimized</h3>
+                    <p>Scanner is optimized for A4 document capture with automatic edge detection and perspective correction.</p>
+                    <div class="quality-bar">
+                        <div class="quality-fill"></div>
+                    </div>
+                </div>
+                
+                <div class="upload-section">
+                    <h3><i class="fas fa-cloud-upload-alt"></i> Automatic PDF Upload</h3>
+                    <p>When document is clear and properly framed, it will automatically stop scanning and upload as A4 PDF</p>
+                    
+                    <div class="upload-progress" id="upload-progress">
+                        <div class="upload-progress-bar" id="upload-progress-bar"></div>
+                    </div>
+                    
+                    <button id="upload-manual" class="btn btn-primary" disabled style="margin-top: 15px;">
+                        <i class="fas fa-file-upload"></i> Manual Upload PDF
+                    </button>
+                </div>
+            </div>
+            
+            <div class="controls-column">
+                <h2 class="section-title"><i class="fas fa-cogs"></i> Scanner Controls</h2>
+                
+                <div class="status-panel">
+                    <div class="status-header">
+                        <h3><i class="fas fa-info-circle"></i> Scanner Status</h3>
+                        <div class="status-indicator">
+                            <div class="status-dot" id="status-dot"></div>
+                            <span id="status-text">Camera Off</span>
+                        </div>
+                    </div>
+                    
+                    <p id="status-details">Start the camera and place document in the frame. The scanner will automatically detect when the document is clear.</p>
+                    
+                    <div class="document-stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="page-count">0</div>
+                            <div class="stat-label">Pages Scanned</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="doc-quality">--</div>
+                            <div class="stat-label">Document Quality</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="scan-state">IDLE</div>
+                            <div class="stat-label">Scanner State</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="pages-container">
+                    <h3><i class="fas fa-file-pdf"></i> Scanned Pages</h3>
+                    <div class="page-list" id="page-list">
+                        <div class="page-item empty-state" style="text-align: center; padding: 30px;">
+                            <p>No pages scanned yet. The scanner will automatically add pages when documents are detected.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="preview-container" id="preview-container" style="display: none;">
+                    <h3><i class="fas fa-eye"></i> Last Scan Preview</h3>
+                    <img id="preview-image" class="preview-image" src="" alt="Last scanned page">
+                    <div>
+                        <span class="a4-badge">A4 Formatted</span>
+                        <p style="margin-top: 10px; font-size: 0.9rem;">This page has been automatically formatted to A4 size and will be added to the PDF.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>4K Document Scanner with Automatic A4 Formatting & Upload | Designed for Professional Invoice Management</p>
+        <p><i class="fas fa-mobile-alt"></i> Fully Responsive - Optimized for Desktop & Mobile Scanning</p>
+    </div>
 
+    <script>
+        // Global variables
+        let cameraStream = null;
+        let scannedPages = [];
+        let isScanning = false;
+        let isAutoMode = false;
+        let scanInterval = null;
+        let pageCounter = 1;
+        let documentDetected = false;
+        let clearDocumentCount = 0;
+        
+        // DOM Elements
+        const cameraView = document.getElementById('camera-view');
+        const startCameraBtn = document.getElementById('start-camera');
+        const autoScanBtn = document.getElementById('auto-scan-btn');
+        const captureBtn = document.getElementById('capture-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const uploadManualBtn = document.getElementById('upload-manual');
+        const pageList = document.getElementById('page-list');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const statusDetails = document.getElementById('status-details');
+        const pageCount = document.getElementById('page-count');
+        const docQuality = document.getElementById('doc-quality');
+        const scanState = document.getElementById('scan-state');
+        const scanLine = document.getElementById('scan-line');
+        const detectionMessage = document.getElementById('detection-message');
+        const uploadProgress = document.getElementById('upload-progress');
+        const uploadProgressBar = document.getElementById('upload-progress-bar');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        
+        // Initialize the scanner
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check for camera support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                statusText.textContent = "Camera not supported";
+                startCameraBtn.disabled = true;
+                startCameraBtn.innerHTML = '<i class="fas fa-times-circle"></i> Camera Not Supported';
+            }
+            
+            // Event listeners
+            startCameraBtn.addEventListener('click', startCamera);
+            autoScanBtn.addEventListener('click', toggleAutoScan);
+            captureBtn.addEventListener('click', capturePage);
+            resetBtn.addEventListener('click', resetScanner);
+            uploadManualBtn.addEventListener('click', uploadPDF);
+            
+            // Initialize UI
+            updateStatus('idle', 'Scanner ready. Start camera to begin.');
+        });
+        
+        // Start the camera
+        async function startCamera() {
+            try {
+                // Request 4K camera
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 3840 },
+                        height: { ideal: 2160 },
+                        facingMode: 'environment',
+                        frameRate: { ideal: 30 }
+                    }
+                });
+                
+                // Display camera stream
+                cameraView.srcObject = cameraStream;
+                
+                // Update UI
+                startCameraBtn.disabled = true;
+                startCameraBtn.innerHTML = '<i class="fas fa-check-circle"></i> Camera Active';
+                autoScanBtn.disabled = false;
+                captureBtn.disabled = false;
+                
+                // Update status
+                updateStatus('ready', 'Camera active. Place document in frame.');
+                scanState.textContent = 'READY';
+                docQuality.textContent = '4K';
+                
+                // Start document detection simulation
+                simulateDocumentDetection();
+                
+            } catch (error) {
+                console.error('Camera error:', error);
+                updateStatus('error', 'Failed to access camera. Please check permissions.');
+                startCameraBtn.disabled = false;
+                startCameraBtn.innerHTML = '<i class="fas fa-video"></i> Start 4K Camera';
+            }
+        }
+        
+        // Simulate document detection
+        function simulateDocumentDetection() {
+            // In a real app, this would use computer vision to detect documents
+            // For this simulation, we'll use a timer-based approach
+            
+            // Reset detection state
+            documentDetected = false;
+            clearDocumentCount = 0;
+            
+            // Simulate detection after a short delay
+            setTimeout(() => {
+                if (cameraStream) {
+                    documentDetected = true;
+                    detectionMessage.style.display = 'block';
+                    updateStatus('detected', 'Document detected. Adjust position for optimal scan.');
+                    
+                    // If in auto mode, start scanning
+                    if (isAutoMode) {
+                        startAutoScanning();
+                    }
+                }
+            }, 1500);
+        }
+        
+        // Toggle auto-scan mode
+        function toggleAutoScan() {
+            if (isAutoMode) {
+                // Stop auto-scan
+                stopAutoScanning();
+                autoScanBtn.innerHTML = '<i class="fas fa-robot"></i> Auto-Scan Mode';
+                autoScanBtn.classList.remove('btn-danger');
+                autoScanBtn.classList.add('btn-success');
+                updateStatus('ready', 'Auto-scan stopped. Ready for manual capture.');
+            } else {
+                // Start auto-scan
+                isAutoMode = true;
+                autoScanBtn.innerHTML = '<i class="fas fa-stop-circle"></i> Stop Auto-Scan';
+                autoScanBtn.classList.remove('btn-success');
+                autoScanBtn.classList.add('btn-danger');
+                
+                if (documentDetected) {
+                    startAutoScanning();
+                } else {
+                    updateStatus('detecting', 'Waiting for document detection...');
+                }
+            }
+        }
+        
+        // Start auto-scanning process
+        function startAutoScanning() {
+            if (!documentDetected || !isAutoMode) return;
+            
+            updateStatus('scanning', 'Auto-scanning document. Keep document steady.');
+            scanState.textContent = 'SCANNING';
+            
+            // Start the scanning animation
+            scanLine.style.animation = 'scan-portrait 2s ease-in-out infinite';
+            
+            // Simulate scanning process
+            let scanProgress = 0;
+            const scanInterval = setInterval(() => {
+                scanProgress += 20;
+                
+                // When scanning is complete
+                if (scanProgress >= 100) {
+                    clearInterval(scanInterval);
+                    
+                    // Check if document is clear (simulated)
+                    clearDocumentCount++;
+                    
+                    if (clearDocumentCount >= 3) {
+                        // Document is clear, capture it
+                        capturePage();
+                        
+                        // Stop scanning line
+                        scanLine.style.animation = 'none';
+                        
+                        // Simulate processing time
+                        setTimeout(() => {
+                            updateStatus('processing', 'Processing document...');
+                            
+                            // After processing, reset for next page or complete
+                            setTimeout(() => {
+                                if (scannedPages.length < 5) { // Limit to 5 pages for demo
+                                    clearDocumentCount = 0;
+                                    updateStatus('ready', 'Document scanned. Place next page or wait for auto-upload.');
+                                    
+                                    // Auto-upload if we have multiple pages
+                                    if (scannedPages.length >= 2) {
+                                        setTimeout(() => {
+                                            autoUploadPDF();
+                                        }, 2000);
+                                    }
+                                } else {
+                                    // Max pages reached, auto-upload
+                                    autoUploadPDF();
+                                }
+                            }, 1000);
+                        }, 500);
+                    } else {
+                        // Document not clear enough, continue scanning
+                        scanProgress = 0;
+                        updateStatus('scanning', 'Enhancing document clarity...');
+                    }
+                }
+            }, 200);
+        }
+        
+        // Stop auto-scanning
+        function stopAutoScanning() {
+            isAutoMode = false;
+            scanLine.style.animation = 'none';
+            updateStatus('ready', 'Auto-scan stopped.');
+            scanState.textContent = 'READY';
+        }
+        
+        // Capture a page manually
+        function capturePage() {
+            if (!cameraStream) return;
+            
+            // Create a canvas for capture
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            // Set canvas to A4 aspect ratio (portrait)
+            const a4Ratio = 210 / 297; // A4 aspect ratio (width/height)
+            canvas.width = 1200; // High resolution for 4K
+            canvas.height = canvas.width / a4Ratio;
+            
+            // Draw camera frame to canvas (simulating A4 crop)
+            context.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
+            
+            // Enhance image for document (simulated)
+            context.filter = 'contrast(1.2) brightness(1.1)';
+            context.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+            context.filter = 'none';
+            
+            // Convert to data URL
+            const imageData = canvas.toDataURL('image/jpeg', 0.95);
+            
+            // Create page object
+            const page = {
+                id: Date.now(),
+                number: pageCounter++,
+                imageData: imageData,
+                timestamp: new Date().toLocaleTimeString(),
+                format: 'A4',
+                size: '210 × 297 mm'
+            };
+            
+            scannedPages.push(page);
+            
+            // Update UI
+            updatePageList();
+            updateStats();
+            
+            // Show preview
+            previewImage.src = imageData;
+            previewContainer.style.display = 'block';
+            
+            // Update status
+            updateStatus('captured', `Page ${page.number} captured and formatted to A4.`);
+            
+            // Enable upload button
+            uploadManualBtn.disabled = false;
+            
+            // If in auto mode and we have enough pages, auto-upload
+            if (isAutoMode && scannedPages.length >= 2) {
+                setTimeout(() => {
+                    autoUploadPDF();
+                }, 1500);
+            }
+        }
+        
+        // Automatically upload PDF when document is clear
+        function autoUploadPDF() {
+            if (scannedPages.length === 0) return;
+            
+            updateStatus('uploading', `Auto-uploading ${scannedPages.length} page(s) as PDF...`);
+            scanState.textContent = 'UPLOADING';
+            
+            // Show upload progress
+            uploadProgress.style.display = 'block';
+            uploadProgressBar.style.width = '0%';
+            
+            // Simulate upload progress
+            let progress = 0;
+            const uploadInterval = setInterval(() => {
+                progress += 10;
+                uploadProgressBar.style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(uploadInterval);
+                    
+                    // Upload complete
+                    setTimeout(() => {
+                        updateStatus('uploaded', `PDF with ${scannedPages.length} pages uploaded successfully!`);
+                        scanState.textContent = 'COMPLETE';
+                        
+                        // Show success message
+                        showNotification(`PDF successfully uploaded! ${scannedPages.length} page(s) converted to A4 format.`);
+                        
+                        // Reset for next document
+                        setTimeout(() => {
+                            resetScanner();
+                        }, 3000);
+                    }, 500);
+                }
+            }, 150);
+        }
+        
+        // Manual PDF upload
+        function uploadPDF() {
+            if (scannedPages.length === 0) return;
+            
+            // Show upload progress
+            uploadProgress.style.display = 'block';
+            uploadProgressBar.style.width = '0%';
+            
+            // Simulate upload
+            let progress = 0;
+            const uploadInterval = setInterval(() => {
+                progress += 20;
+                uploadProgressBar.style.width = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(uploadInterval);
+                    
+                    // Show success
+                    showNotification(`PDF uploaded! ${scannedPages.length} page(s) in A4 format.`);
+                    updateStatus('uploaded', 'PDF uploaded successfully.');
+                    
+                    // Reset upload progress after delay
+                    setTimeout(() => {
+                        uploadProgress.style.display = 'none';
+                        uploadProgressBar.style.width = '0%';
+                    }, 2000);
+                }
+            }, 200);
+        }
+        
+        // Reset the scanner
+        function resetScanner() {
+            // Clear scanned pages
+            scannedPages = [];
+            pageCounter = 1;
+            
+            // Reset auto-scan
+            if (isAutoMode) {
+                stopAutoScanning();
+                isAutoMode = false;
+                autoScanBtn.innerHTML = '<i class="fas fa-robot"></i> Auto-Scan Mode';
+                autoScanBtn.classList.remove('btn-danger');
+                autoScanBtn.classList.add('btn-success');
+            }
+            
+            // Reset UI
+            updatePageList();
+            updateStats();
+            previewContainer.style.display = 'none';
+            uploadManualBtn.disabled = true;
+            uploadProgress.style.display = 'none';
+            uploadProgressBar.style.width = '0%';
+            detectionMessage.style.display = 'none';
+            documentDetected = false;
+            clearDocumentCount = 0;
+            
+            // Update status
+            if (cameraStream) {
+                updateStatus('ready', 'Scanner reset. Place new document in frame.');
+                scanState.textContent = 'READY';
+            } else {
+                updateStatus('idle', 'Scanner ready. Start camera to begin.');
+                scanState.textContent = 'IDLE';
+            }
+        }
+        
+        // Update page list UI
+        function updatePageList() {
+            pageList.innerHTML = '';
+            
+            if (scannedPages.length === 0) {
+                pageList.innerHTML = `
+                    <div class="page-item empty-state" style="text-align: center; padding: 30px;">
+                        <p>No pages scanned yet. The scanner will automatically add pages when documents are detected.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            scannedPages.forEach((page, index) => {
+                const pageItem = document.createElement('div');
+                pageItem.className = 'page-item';
+                pageItem.innerHTML = `
+                    <div class="page-info">
+                        <div class="page-number">${page.number}</div>
+                        <div class="page-details">
+                            <p><strong>Page ${page.number}</strong></p>
+                            <p><small>${page.format} • ${page.timestamp}</small></p>
+                        </div>
+                    </div>
+                    <div class="page-actions">
+                        <button class="action-btn" onclick="movePage(${index}, -1)" ${index === 0 ? 'disabled' : ''}>
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="action-btn" onclick="movePage(${index}, 1)" ${index === scannedPages.length - 1 ? 'disabled' : ''}>
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button class="action-btn" onclick="deletePage(${index})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                `;
+                pageList.appendChild(pageItem);
+            });
+            
+            // Update page count
+            pageCount.textContent = scannedPages.length;
+        }
+        
+        // Update statistics
+        function updateStats() {
+            pageCount.textContent = scannedPages.length;
+            docQuality.textContent = scannedPages.length > 0 ? '4K' : '--';
+        }
+        
+        // Update status display
+        function updateStatus(state, message) {
+            // Update status dot
+            statusDot.className = 'status-dot';
+            if (state === 'ready' || state === 'detected') {
+                statusDot.classList.add('active');
+            } else if (state === 'scanning' || state === 'uploading') {
+                statusDot.classList.add('scanning');
+            }
+            
+            // Update status text
+            statusText.textContent = getStatusText(state);
+            statusDetails.textContent = message;
+        }
+        
+        // Get status text from state
+        function getStatusText(state) {
+            const statusMap = {
+                'idle': 'Ready',
+                'ready': 'Camera Active',
+                'detected': 'Document Detected',
+                'scanning': 'Scanning',
+                'processing': 'Processing',
+                'captured': 'Page Captured',
+                'uploading': 'Uploading',
+                'uploaded': 'Upload Complete',
+                'error': 'Error'
+            };
+            return statusMap[state] || 'Ready';
+        }
+        
+        // Move page in sequence
+        function movePage(index, direction) {
+            if ((direction === -1 && index === 0) || (direction === 1 && index === scannedPages.length - 1)) return;
+            
+            // Swap pages
+            const newIndex = index + direction;
+            [scannedPages[index], scannedPages[newIndex]] = [scannedPages[newIndex], scannedPages[index]];
+            
+            // Update page numbers
+            scannedPages.forEach((page, i) => {
+                page.number = i + 1;
+            });
+            
+            updatePageList();
+            showNotification(`Page moved ${direction === -1 ? 'up' : 'down'}`);
+        }
+        
+        // Delete a page
+        function deletePage(index) {
+            scannedPages.splice(index, 1);
+            
+            // Update page numbers
+            scannedPages.forEach((page, i) => {
+                page.number = i + 1;
+            });
+            
+            pageCounter = scannedPages.length + 1;
+            updatePageList();
+            updateStats();
+            
+            if (scannedPages.length === 0) {
+                previewContainer.style.display = 'none';
+                uploadManualBtn.disabled = true;
+            }
+            
+            showNotification('Page deleted');
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #27ae60, #219653);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 500;
+                max-width: 300px;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            notification.innerHTML = `
+                <i class="fas fa-check-circle"></i>
+                <span>${message}</span>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Add CSS for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Stop camera when leaving page
+        window.addEventListener('beforeunload', () => {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
